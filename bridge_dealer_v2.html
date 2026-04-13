@@ -314,6 +314,7 @@
       <button class="btn btn-outline" onclick="printDetail(true)">🖨 Alle Boards (Detail)</button>
       <button class="btn btn-outline" onclick="printOverview()">🖨 Übersicht</button>
       <button class="btn btn-outline" onclick="printPositions()">🖨 Positions-Übersicht</button>
+      <button class="btn btn-outline" onclick="exportWord()">📄 Word Export</button>
     </div>
   </div>
 
@@ -788,7 +789,100 @@ function openPrint(body){
   w.document.close(); w.focus(); setTimeout(()=>w.print(),800);
 }
 
-// ── Start ──────────────────────────────────────────────────────────────────
+// ── Word Export ────────────────────────────────────────────────────────────
+function exportWord(){
+  const SUIT_COLOR_W={S:'#1a1a1a',H:'#cc2200',D:'#cc2200',C:'#1a1a1a'};
+  const vMap={NONE:'None',NS:'NS',EW:'EW',ALL:'All'};
+  const now=new Date();
+  const d=now.getFullYear()+'.'+(now.getMonth()+1).toString().padStart(2,'0')+'.'+now.getDate().toString().padStart(2,'0');
+
+  const boardsHTML=boards.map(b=>{
+    const total=HANDS.reduce((s,h)=>s+hcp(b.hands[h]),0);
+    const handCell=(h)=>{
+      const cards=b.hands[h], pts=hcp(cards), v=isVul(h,b.vul);
+      const border=v?'border:2px solid #cc2200;':'border:1px solid #ccc;';
+      const bg=v?'background:#fff5f5;':'background:#fff;';
+      let html=`<td style="padding:8px;${border}${bg}vertical-align:top;min-width:120px;">
+        <b style="font-family:Georgia,serif;color:#a07800;">${HAND_LABEL[h]}${v?' &#9679;':''}</b>
+        <span style="font-size:10pt;background:#a07800;color:#fff;padding:1px 5px;border-radius:8px;margin-left:4px;">${pts} HCP</span><br>`;
+      for(const s of SUITS){
+        const sc=cards.filter(c=>c.suit===s).map(c=>c.rank==='T'?'10':c.rank).join(' ');
+        html+=`<span style="color:${SUIT_COLOR_W[s]};">${SUIT_SYM[s]} ${sc||'—'}</span><br>`;
+      }
+      return html+'</td>';
+    };
+
+    // Lizitationstabelle
+    const lizHeaders=HANDS.map(h=>`<td style="padding:4px 8px;border:1px solid #ccc;background:${b.dealer===h?'#fffde0':'#f0ede6'};font-family:Georgia,serif;font-weight:bold;text-align:center;">${HAND_LABEL[h]}${b.dealer===h?' (G)':''}</td>`).join('');
+    const lizRows=[0,1,2,3,4].map(()=>`<tr>${HANDS.map(()=>`<td style="padding:8px;border:1px solid #ccc;min-width:80px;">&nbsp;</td>`).join('')}</tr>`).join('');
+
+    return `
+      <div style="page-break-after:always;padding:16px;font-family:Arial,sans-serif;">
+        <div style="border-bottom:2pt solid #a07800;padding-bottom:6px;margin-bottom:12px;display:flex;justify-content:space-between;">
+          <span style="font-family:Georgia,serif;font-size:16pt;font-weight:bold;">Board ${b.id}</span>
+          <span style="font-size:10pt;">Geber: <b>${HAND_LABEL[b.dealer]}</b> &nbsp; Gefahrenlage: <b>${VUL_LABEL[b.vul]}</b> &nbsp; Gesamt: ${total} HCP</span>
+        </div>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+          <tr>
+            <td style="width:33%;"></td>
+            ${handCell('N')}
+            <td style="width:33%;"></td>
+          </tr>
+          <tr>
+            ${handCell('W')}
+            <td style="text-align:center;vertical-align:middle;padding:8px;">
+              <div style="width:70px;height:70px;background:#2d7a4a;border-radius:50%;margin:auto;display:flex;align-items:center;justify-content:center;">
+                <span style="color:#c49a00;font-family:Georgia,serif;font-weight:bold;font-size:10pt;">BCH</span>
+              </div>
+            </td>
+            ${handCell('E')}
+          </tr>
+          <tr>
+            <td></td>
+            ${handCell('S')}
+            <td></td>
+          </tr>
+        </table>
+        <div style="margin-top:16px;">
+          <b style="font-family:Georgia,serif;">Lizitation</b>
+          <table style="border-collapse:collapse;margin-top:6px;width:60%;">
+            <tr>${lizHeaders}</tr>
+            ${lizRows}
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+
+  const html=`
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>Bridge Club Höfe – Boards</title>
+      <!--[if gte mso 9]>
+      <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml>
+      <![endif]-->
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 11pt; }
+        @page { size: A4; margin: 20mm 15mm; }
+        div[style*="page-break"] { page-break-after: always; }
+      </style>
+    </head>
+    <body>
+      <h1 style="font-family:Georgia,serif;color:#a07800;text-align:center;border-bottom:2pt solid #a07800;padding-bottom:8px;">
+        Bridge Club Höfe – Boards (${d})
+      </h1>
+      ${boardsHTML}
+    </body>
+    </html>`;
+
+  const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='bridge-hoefe-'+d+'.doc';
+  a.click();
+}
 init();
 </script>
 </body>
