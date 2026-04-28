@@ -1438,7 +1438,8 @@ function doPosOverview() {
   @page { size: A4; margin: 14mm 12mm; }
   body { font-family: 'Source Sans 3', sans-serif; background: #fff; color: #111; padding: 8mm;
     -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  tr:hover { background: #f5f0e8 !important; }
+ tr:hover { background: #f5f0e8 !important; }
+tbody tr { line-height: 2.2; }
 \x3c/style>\n\x3c/head>\n\x3cbody>\n${pages}
 <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>
 \x3c/body>\n\x3c/html>`;
