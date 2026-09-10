@@ -598,7 +598,7 @@
       </div>
     </div>
     <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
-      Berechnet für jedes vollständig verteilte Board die maximal machbaren Stiche je Farbe/SA und Spieler (Double-Dummy-Analyse). Kann bei vielen Boards einige Sekunden dauern.
+      Berechnet für jedes vollständig verteilte Board den höchsten machbaren Kontrakt je Farbe/SA und Spieler (Double-Dummy-Analyse), z. B. "3 SA". Kann bei vielen Boards einige Sekunden dauern.
     </div>
 
     <div class="modal-btns">
@@ -1152,16 +1152,24 @@ async function computeMakeableTable(b) {
   return table;
 }
 
+// Converts a double-dummy trick count into a contract label, e.g. 9 tricks in NT -> "3 SA".
+// Below 7 tricks there is no makeable contract (doesn't reach the 1-level).
+function contractLabel(tricks, strain) {
+  if (tricks < 7) return '–';
+  const level = tricks - 6;
+  return `${level} ${MAKEABLE_STRAIN_LABEL[strain]}`;
+}
+
 function renderMakeableTableHtml(table, compact) {
   const fs = compact ? '0.62rem' : '0.78rem';
   const pad = compact ? '1px 3px' : '3px 6px';
-  const cell = (html, extra='') => `<td style="border:1px solid #ccc;padding:${pad};text-align:center;${extra}">${html}</td>`;
+  const cell = (html, tricks, extra='') => `<td style="border:1px solid #ccc;padding:${pad};text-align:center;${extra}" title="${tricks} Stiche">${html}</td>`;
   const head = (html) => `<th style="border:1px solid #ccc;padding:${pad};background:#f2f2f2;font-weight:700;">${html}</th>`;
   let rows = '';
   MAKEABLE_STRAIN_ORDER.forEach((strain, sIdx) => {
     const vals = MAKEABLE_SEAT_ORDER.map((seat, seatIdx) => table[sIdx][seatIdx]);
     const max = Math.max(...vals);
-    const cells = vals.map(v => cell(v, v === max ? 'font-weight:700;' : '')).join('');
+    const cells = vals.map(v => cell(contractLabel(v, strain), v, v === max && v >= 7 ? 'font-weight:700;' : '')).join('');
     rows += `<tr>${head(MAKEABLE_STRAIN_LABEL[strain])}${cells}</tr>`;
   });
   return `<table style="border-collapse:collapse;font-size:${fs};margin-top:4px;">
@@ -1180,7 +1188,7 @@ async function showMakeablesForCurrent() {
   try {
     const table = await computeMakeableTable(b);
     out.innerHTML = renderMakeableTableHtml(table, false) +
-      `<div style="font-size:0.62rem;color:rgba(245,240,232,0.4);margin-top:4px;">Stiche (Double Dummy) · ${window.BridgeDDS.engineInfo.split(' — ')[0]}</div>`;
+      `<div style="font-size:0.62rem;color:rgba(245,240,232,0.4);margin-top:4px;">Mögliche Kontrakte (Double Dummy) · ${window.BridgeDDS.engineInfo.split(' — ')[0]}</div>`;
   } catch (e) {
     out.innerHTML = `<div style="font-size:0.72rem;color:#c66;">Fehler: ${e.message}</div>`;
     console.error(e);
@@ -1273,7 +1281,7 @@ function renderPrintBoard(b, idx, detail, makeablesTable) {
     makeablesHtml = `<div style="font-size:${detail?'0.68rem':'0.6rem'};color:#999;margin-top:6px;padding-top:4px;border-top:1px solid #eee;">Makeables: nicht verfügbar (Board unvollständig oder Fehler)</div>`;
   } else if (makeablesTable) {
     makeablesHtml = `<div style="margin-top:6px;padding-top:4px;border-top:1px solid #eee;">
-      <div style="font-size:${detail?'0.68rem':'0.6rem'};color:#666;font-weight:700;margin-bottom:2px;">Makeables (Stiche, Double Dummy)</div>
+      <div style="font-size:${detail?'0.68rem':'0.6rem'};color:#666;font-weight:700;margin-bottom:2px;">Makeables (mögliche Kontrakte, Double Dummy)</div>
       ${renderMakeableTableHtml(makeablesTable, !detail)}
     </div>`;
   }
