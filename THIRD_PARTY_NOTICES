@@ -1,0 +1,18 @@
+# Third-Party Notices
+
+## Double-Dummy-Solver (Makeables-Funktion)
+
+Diese App enthält, direkt eingebettet in `index.html`, die JavaScript/WebAssembly-
+Bibliothek **bridge-dds** (Version 1.4.0), einen JS/WASM-Port des Referenz-
+Double-Dummy-Solvers **DDS** von Bo Haglund und Søren Hein
+(https://github.com/dds-bridge/dds).
+
+- JS/WASM-Port: https://github.com/bookchris/bridge-dds-js
+- Lizenz: Apache License 2.0 (vollständiger Text: `licenses/bridge-dds-LICENSE.txt`)
+- Verwendung in dieser App: Berechnung der "Makeables" (maximal machbare
+  Stiche je Farbe/Sans Atout und Spieler) für die Board-Übersicht und den
+  Ausdruck ("Drucken"-Dialog, Option "Makeables anzeigen").
+
+Es werden keine externen Netzwerkaufrufe für die Berechnung benötigt — der
+Solver läuft vollständig lokal im Browser (WebAssembly).
+RDS
